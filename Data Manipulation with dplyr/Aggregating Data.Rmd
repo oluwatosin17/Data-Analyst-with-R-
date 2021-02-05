@@ -1,0 +1,263 @@
+---
+title: "Aggregating Data"
+output: html_notebook
+---
+
+```{r}
+counties <- readRDS("counties.rds")
+
+head(counties)
+```
+
+Counting by region
+The counties dataset contains columns for region, state, population, and the number of citizens, which we selected and saved as the counties_selected table. In this exercise, you'll focus on the region column.
+
+```{r}
+counties_selected <- counties %>%
+  select(region, state, population, citizens)
+
+```
+
+Instructions
+100 XP
+Use count() to find the number of counties in each region, using a second argument to sort in descending order.
+
+```{r}
+
+
+# Use count to find the number of counties in each region
+counties_selected %>% count(region , sort = TRUE)
+```
+
+Counting citizens by state
+You can weigh your count by particular variables rather than finding the number of counties. In this case, you'll find the number of citizens in each state.
+
+counties_selected <- counties %>%
+  select(region, state, population, citizens)
+  
+  
+  Instructions
+100 XP
+Count the number of counties in each state, weighted based on the citizens column, and sorted in descending order.
+
+
+```{r}
+# Find number of counties per state, weighted by citizens
+counties_selected %>% count(state, wt = citizens, sort = TRUE)
+  
+```
+
+Mutating and counting
+You can combine multiple verbs together to answer increasingly complicated questions of your data. For example: "What are the US states where the most people walk to work?"
+
+You'll use the walk column, which offers a percentage of people in each county that walk to work, to add a new column and count based on it.
+
+counties_selected <- counties %>%
+  select(region, state, population, walk)
+Instructions
+100 XP
+Instructions
+100 XP
+Use mutate() to calculate and add a column called population_walk, containing the total number of people who walk to work in a county.
+Use a (weighted and sorted) count() to find the total number of people who walk to work in each state.
+
+
+```{r}
+counties_selected <- counties %>%
+  select(region, state, population, walk)
+
+counties_selected %>%
+  # Add population_walk containing the total number of people who walk to work 
+  mutate(population_walk = population * walk / 100) %>%
+  # Count weighted by the new column
+  count(state, wt = population_walk, sort = TRUE)
+
+```
+
+Summarizing
+The summarize() verb is very useful for collapsing a large dataset into a single observation.
+
+counties_selected <- counties %>%
+  select(county, population, income, unemployment)
+Instructions
+100 XP
+Summarize the counties dataset to find the following columns: min_population (with the smallest population), max_unemployment (with the maximum unemployment), and average_income (with the mean of the income variable).
+
+
+```{r}
+counties_selected <- counties %>%
+  select(county, population, income, unemployment)
+
+# Summarize to find minimum population, maximum unemployment, and average income
+counties_selected %>%
+  summarise(min_population = min(population), max_unemployment = max(unemployment),average_income = mean(income))
+
+
+
+
+```
+
+Summarizing by state
+Another interesting column is land_area, which shows the land area in square miles. Here, you'll summarize both population and land area by state, with the purpose of finding the density (in people per square miles).
+
+counties_selected <- counties %>%
+  select(state, county, population, land_area)
+Instructions 1/2
+50 XP
+Group the data by state, and summarize to create the columns total_area (with total area in square miles) and total_population (with total population).
+
+Add a density column with the people per square mile, then arrange in descending order.
+```{r}
+
+# Add a density column, then sort in descending order
+counties_selected <- counties %>%
+  select(state, county, population, land_area)
+
+counties_selected %>%
+  group_by(state) %>%
+  summarize(total_area = sum(land_area),
+            total_population = sum(population)) %>% mutate(density = total_population/total_area) %>% arrange(desc(density))
+  
+  
+
+```
+
+Summarizing by state and region
+You can group by multiple columns instead of grouping by one. Here, you'll practice aggregating by state and region, and notice how useful it is for performing multiple aggregations in a row.
+
+
+Instructions 1/2
+50 XP
+Instructions 1/2
+50 XP
+Summarize to find the total population, as a column called total_pop, in each combination of region and state.
+Notice the tibble is still grouped by region; use another summarize() step to calculate two new columns: the average state population in each region (average_pop) and the median state population in each region (median_pop).
+
+
+```{r}
+# Calculate the average_pop and median_pop columns 
+counties_selected <- counties %>%
+  select(region, state, county, population)
+
+counties_selected %>%
+  group_by(region, state) %>%
+  summarize(total_pop = sum(population)) %>%
+  summarize(average_pop = mean(total_pop),
+            median_pop = median(total_pop))
+
+
+```
+Selecting a county from each region
+Previously, you used the walk column, which offers a percentage of people in each county that walk to work, to add a new column and count to find the total number of people who walk to work in each county.
+
+Now, you're interested in finding the county within each region with the highest percentage of citizens who walk to work.
+
+Instructions
+100 XP
+Instructions
+100 XP
+Find the county in each region with the highest percentage of citizens who walk to work.
+
+
+
+```{r}
+counties_selected <- counties %>%
+  select(region, state, county, metro, population, walk)
+
+# Group by region and find the greatest number of citizens who walk to work
+counties_selected %>% group_by(region) %>%  
+top_n(1,walk)
+
+```
+
+Finding the highest-income state in each region
+You've been learning to combine multiple dplyr verbs together. Here, you'll combine group_by(), summarize(), and top_n() to find the state in each region with the highest income.
+
+When you group by multiple columns and then summarize, it's important to remember that the summarize "peels off" one of the groups, but leaves the rest on. For example, if you group_by(X, Y) then summarize, the result will still be grouped by X.
+
+
+
+```{r}
+counties_selected <- counties %>%
+  select(region, state, county, population, income)
+
+
+```
+
+Instructions
+100 XP
+Calculate the average income (as average_income) of counties within each region and state (notice the group_by() has already been done for you).
+Find the highest income state in each region.
+
+
+```{r}
+counties_selected %>%
+  group_by(region, state) %>%
+  # Calculate average income
+  summarise(average_income = mean(income)) %>%
+  top_n(1,average_income)
+  # Find the highest income state in each region
+
+
+```
+
+Finding the highest-income state in each region
+You've been learning to combine multiple dplyr verbs together. Here, you'll combine group_by(), summarize(), and top_n() to find the state in each region with the highest income.
+
+When you group by multiple columns and then summarize, it's important to remember that the summarize "peels off" one of the groups, but leaves the rest on. For example, if you group_by(X, Y) then summarize, the result will still be grouped by X.
+
+```{r}
+counties_selected <- counties %>%
+  select(region, state, county, population, income)
+```
+
+
+
+Instructions
+100 XP
+Calculate the average income (as average_income) of counties within each region and state (notice the group_by() has already been done for you).
+Find the highest income state in each region.
+
+```{r}
+
+counties_selected %>%
+  group_by(region, state) %>%
+  # Calculate average income
+  summarise(average_income = mean(income)) %>% top_n(1,average_income)
+  # Find the highest income state in each region`{r}
+
+```
+Using summarize, top_n, and count together
+In this chapter, you've learned to use five dplyr verbs related to aggregation: count(), group_by(), summarize(), ungroup(), and top_n(). In this exercise, you'll use all of them to answer a question: In how many states do more people live in metro areas than non-metro areas?
+
+Recall that the metro column has one of the two values "Metro" (for high-density city areas) or "Nonmetro" (for suburban and country areas).
+
+```{r}
+counties_selected <- counties %>%
+  select(state, metro, population)
+
+```
+
+For each combination of state and metro, find the total population as total_pop.
+
+Extract the most populated row from each state, which will be either Metro or Nonmetro.
+
+Ungroup, then count how often Metro or Nonmetro appears to see how many states have more people living in those areas.
+
+
+```{r}
+# Count the states with more people in Metro or Nonmetro areas
+counties_selected %>%
+  group_by(state, metro) %>%
+  summarize(total_pop = sum(population)) %>%
+  top_n(1, total_pop) %>% ungroup(total_pop) %>% count(metro)
+
+
+```
+
+
+
+
+
+
+
